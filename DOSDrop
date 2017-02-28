@@ -1,0 +1,54 @@
+.386
+.model flat, stdcall
+option casemap :none  
+include \masm32\include\windows.inc
+include \masm32\include\user32.inc
+include \masm32\include\kernel32.inc
+include \masm32\include\shell32.inc
+include \masm32\include\advapi32.inc
+include \masm32\include\masm32.inc
+includelib \masm32\lib\user32.lib
+includelib \masm32\lib\kernel32.lib
+includelib \masm32\lib\shell32.lib
+includelib \masm32\lib\advapi32.lib
+includelib \masm32\lib\masm32.lib
+.data
+   szKey          db "Folder\Shell\DosDrop\Command",0
+   szValue        db "DosDrop by: illwill",0
+   szDropKey      db 34, "CMD.EXE", 34, " /K CD ", 34, "%L", 34, 0
+   szDropKey9x    db 34, "COMMAND.COM", 34, " /K CD ", 34, "%L", 34, 0
+   Err            db "Could not create Key,Check your User Permissions",0
+   YAY            db "Key Successfully Added!",0
+.data?
+    hReg         dd ?
+    lpdwDisp     dd ?
+.code
+start:
+   invoke RegCreateKeyEx, HKEY_CLASSES_ROOT, addr szKey,0,0, 0,\
+           KEY_WRITE or KEY_READ, 0, addr hReg, addr lpdwDisp
+     .if eax == ERROR_SUCCESS
+        ;check the os version
+        mov eax, ds
+        test al, 4
+        jnz itz_nt   
+           invoke RegSetValueEx, hReg,0, 0, 1, addr szDropKey9x,sizeof szDropKey9x
+           .if eax == ERROR_SUCCESS
+            invoke RegCloseKey, hReg
+            invoke MessageBox,0,addr YAY,addr szValue,0
+           .else
+            invoke MessageBox,0,addr Err,0,0
+           .endif
+             invoke ExitProcess,0
+        itz_nt:
+           invoke RegSetValueEx, hReg,0, 0, 1, addr szDropKey,sizeof szDropKey
+         .if eax == ERROR_SUCCESS
+            invoke RegCloseKey, hReg
+            invoke MessageBox,0,addr YAY,addr szValue,0
+         .else
+           invoke MessageBox,0,addr Err,0,0
+         .endif
+     .else
+          invoke MessageBox,0,addr Err,0,0
+     .endif
+ invoke ExitProcess,0
+end start
