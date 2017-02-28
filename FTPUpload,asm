@@ -1,0 +1,41 @@
+include \masm32\include\kernel32.inc
+include \masm32\include\wininet.inc
+include \masm32\include\user32.inc
+include \masm32\include\masm32.inc
+includelib \masm32\lib\kernel32.lib
+includelib \masm32\lib\wininet.lib
+includelib \masm32\lib\user32.lib
+includelib \masm32\lib\masm32.lib
+FTPit       PROTO :DWORD,:DWORD
+ThePort                   equ     21
+.data
+  ftpsite      db "127.0.0.1",0
+  Username     db "testme",0
+  Password     db "testme",0
+  TheFile      db "blah.txt",0
+  szAgent      db "Supa FTP client 2005",0
+.code
+
+start:
+     invoke FTPit, addr ftpsite, addr TheFile
+     invoke ExitProcess, 0
+FTPit PROC FTPserver:DWORD, lpszFile:DWORD
+    local hInternet:DWORD
+    local ftpHandle:DWORD
+    local context:DWORD
+    local InternetStatusCallback:DWORD
+invoke InternetOpen,addr szAgent,INTERNET_OPEN_TYPE_PRECONFIG,NULL,NULL,0
+     mov hInternet, eax
+ invoke InternetConnect,hInternet,FTPserver,ThePort ,\
+                      ADDR Username,ADDR Password,INTERNET_SERVICE_FTP,\
+                     INTERNET_FLAG_PASSIVE,ADDR context
+     mov ftpHandle,eax
+ invoke FtpPutFile,ftpHandle,lpszFile,lpszFile,FTP_TRANSFER_TYPE_BINARY,NULL
+ invoke InternetCloseHandle,ftpHandle
+ invoke InternetCloseHandle, hInternet
+    ret
+err:
+ invoke GetErrDescription,eax
+ ret
+FTPit endp
+end start
